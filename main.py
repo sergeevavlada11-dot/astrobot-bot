@@ -19,8 +19,8 @@ log = logging.getLogger("astrobot-final")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEBHOOK_HOST = os.getenv("WEBHOOK_HOST")  # e.g. https://your-bot.onrender.com
-WEBHOOK_PATH = f"/webhook/{TELEGRAM_TOKEN}"
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}" if WEBHOOK_HOST else None
+WEBHOOK_PATH = "/"
+WEBHOOK_URL = WEBHOOK_HOST
 UNLOCK_CODE = os.getenv("UNLOCK_CODE", "ASTROVIP")
 DB_PATH = os.getenv("DB_PATH", "astrobot.sqlite3")
 
