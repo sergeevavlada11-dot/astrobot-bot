@@ -89,11 +89,12 @@ def ensure_user(uid):
     return get_user(uid)
 
 def update_user(uid, **fields):
-    if not fields: return
-    cols = ",".join([f"{{k}}=?" for k in fields.keys()])
+    if not fields:
+        return
+    cols = ",".join([f"{k}=?" for k in fields.keys()])
     vals = list(fields.values()) + [uid]
     with sqlite3.connect(DB_PATH) as con:
-        con.execute(f"UPDATE users SET {{cols}} WHERE user_id=?", vals)
+        con.execute(f"UPDATE users SET {cols} WHERE user_id=?", vals)
         con.commit()
 
 def save_reading(uid, sphere, sub, prompt, answer):
