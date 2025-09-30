@@ -1,4 +1,5 @@
 wheel
-aiogram==2.25.2
-openai>=1.30.0
-aiohttp==3.8.6
+aiogram==2.25.1
+openai>=1.13.3
+aiohttp==3.9.5
+python-dotenv==1.0.1
