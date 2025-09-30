@@ -71,15 +71,15 @@ def get_user(uid):
         cur = con.execute("SELECT user_id, paid, free_used, city, birth_date, birth_time FROM users WHERE user_id=?", (uid,))
         row = cur.fetchone()
         if not row:
-    return None
-return {
-    "user_id": row[0],
-    "paid": bool(row[1]),
-    "free_used": bool(row[2]),
-    "city": row[3],
-    "birth_date": row[4],
-    "birth_time": row[5]
-}
+            return None
+        return {
+            "user_id": row[0],
+            "paid": bool(row[1]),
+            "free_used": bool(row[2]),
+            "city": row[3],
+            "birth_date": row[4],
+            "birth_time": row[5]
+        }
 def ensure_user(uid):
     u = get_user(uid)
     if u: return u
