@@ -137,7 +137,7 @@ STATE_WAIT_DATE = "wait_date"
 STATE_WAIT_TIME = "wait_time"
 STATE_READY = "ready"
 
-user_state = {{}}
+user_state = {}
 
 def set_state(uid, state): user_state[uid] = state
 def get_state(uid): return user_state.get(uid)
