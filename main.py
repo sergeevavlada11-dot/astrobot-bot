@@ -271,11 +271,16 @@ async def ask_date(message: types.Message):
 
     u = ensure_user(message.from_user.id)
     update_user(u["user_id"], city=city)
+
     set_state(u["user_id"], STATE_WAIT_DATE)
+    log.info(f"📍 STATE_WAIT_DATE установлен для {u['user_id']}")
+
     await message.answer("Отлично! ✨ Теперь пришли дату рождения <b>дд.мм.гггг</b>\nНапример: 15.07.1995")
 
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_WAIT_DATE)
 async def ask_time(message: types.Message):
+    log.info(f"📆 Вошёл в ask_time. Текущее состояние: {get_state(message.from_user.id)}")
+
     if await try_unlock(message): 
         return
 
@@ -286,7 +291,10 @@ async def ask_time(message: types.Message):
 
     u = ensure_user(message.from_user.id)
     update_user(u["user_id"], birth_date=date)
+
     set_state(u["user_id"], STATE_WAIT_TIME)
+    log.info(f"⏱ STATE_WAIT_TIME установлен для {u['user_id']}")
+
     await message.answer("Супер! 🕰️ Теперь пришли время рождения <b>чч:мм</b>\nЕсли не знаешь — напиши <i>не знаю</i>")
 
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_WAIT_TIME)
@@ -306,6 +314,7 @@ async def ready_menu(message: types.Message):
         update_user(u["user_id"], birth_time=t)
 
     set_state(u["user_id"], STATE_READY)
+    log.info(f"✅ Пользователь {u['user_id']} готов, состояние: STATE_READY")
     u = get_user(u["user_id"])
 
     # Вариант 2: сначала резюме, потом меню
@@ -319,7 +328,7 @@ async def ready_menu(message: types.Message):
 # ---------------------------------
 # Flow: pick sphere/subtopic
 # ---------------------------------
-@dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_READY and m.text in SPHERE_MAP.keys())
+@dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_READY and m.text.strip() in SPHERE_MAP)
 async def pick_subtopic(message: types.Message):
     u = ensure_user(message.from_user.id)
     if await try_unlock(message): 
