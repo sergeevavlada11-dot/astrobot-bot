@@ -263,7 +263,7 @@ async def ask_time(message: types.Message):
         return
     u = ensure_user(message.from_user.id)
     update_user(u["user_id"], birth_date=date)
-    set_state(u["user_id"], STATE_WAIT_TIME)
+    set_state(u["user_id"], STATE_WAIT_DATE)
     await message.answer("Супер! 🕰️ Теперь пришли время рождения <b>чч:мм</b>\nЕсли не знаешь — напиши <i>не знаю</i>")
 
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_WAIT_TIME)
