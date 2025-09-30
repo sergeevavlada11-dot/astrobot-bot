@@ -345,7 +345,7 @@ async def back_to_spheres(message: types.Message):
     await message.answer("Выбери сферу ⤵️", reply_markup=sphere_kb)
 
 # ---------------------------------
-# Final generate (GPT-5)
+# Final generate (gpt-4-turbo)
 # ---------------------------------
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_READY and m.text in SUB_MAP.keys())
 async def final_generate(message: types.Message):
@@ -383,7 +383,7 @@ async def final_generate(message: types.Message):
 
     try:
         completion = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4-turbo",
             messages=[
                 {"role": "system", "content": "Ты опытный астролог-консультант. Пиши дружелюбно, с эмодзи и структурой."},
                 {"role": "user", "content": prompt},
