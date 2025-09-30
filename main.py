@@ -250,7 +250,7 @@ async def ask_date(message: types.Message):
         return
     u = ensure_user(message.from_user.id)
     update_user(u["user_id"], city=city)
-    set_state(u["user_id"], STATE_WAIT_DATE)
+    set_state(u["user_id"], STATE_WAIT_CITY)
     await message.answer("Отлично! ✨ Теперь пришли дату рождения <b>дд.мм.гггг</b>\nНапример: 15.07.1995")
 
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_WAIT_DATE)
