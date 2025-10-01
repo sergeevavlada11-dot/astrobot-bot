@@ -614,40 +614,41 @@ async def final_generate(message: types.Message):
     # 📡 GPT-запрос
     # -----------------------
     try:
-    completion = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "Ты опытный ведический астролог-консультант."},
-            {"role": "user", "content": prompt},
-        ]
-    )
-
-    raw_answer = completion.choices[0].message.content
-    answer = format_answer(raw_answer)
-
-    # 🔧 Разбиваем длинный текст на части
-    MAX_LEN = 4000
-    for i in range(0, len(answer), MAX_LEN):
-        part = answer[i:i + MAX_LEN]
-        await message.answer(part)
-
-    # 💾 Сохраняем полный ответ
-    save_reading(uid, sphere, sub, prompt, answer)
-
-    if not u.get("paid") and not u.get("free_used"):
-        update_user(uid, free_used=1)
-        await message.answer(
-            "🔒 Ты использовала бесплатную консультацию. "
-            "Чтобы открыть все разделы — введи секретный код разблокировки."
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Ты опытный ведический астролог-консультант."},
+                {"role": "user", "content": prompt},
+            ]
         )
-    
-    except OpenAIError:
-    log.exception("OpenAI error")
-    await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
-    except Exception:
-    log.exception("Unexpected error")
-    await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
 
+        raw_answer = completion.choices[0].message.content
+        answer = format_answer(raw_answer)
+
+        # 🔧 Разбиваем длинный текст на части
+        MAX_LEN = 4000
+        for i in range(0, len(answer), MAX_LEN):
+            part = answer[i:i + MAX_LEN]
+            await message.answer(part)
+
+        # 💾 Сохраняем полный ответ
+        save_reading(uid, sphere, sub, prompt, answer)
+
+        if not u.get("paid") and not u.get("free_used"):
+            update_user(uid, free_used=1)
+            await message.answer(
+                "🔒 Ты использовала бесплатную консультацию. "
+                "Чтобы открыть все разделы — введи секретный код разблокировки."
+            )
+
+    except OpenAIError:
+        log.exception("OpenAI error")
+        await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
+
+    except Exception:
+        log.exception("Unexpected error")
+        await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
+        
 # ----------------------
 # Webhook lifecycle
 # ----------------------
