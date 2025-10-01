@@ -418,7 +418,7 @@ async def back_to_spheres(message: types.Message):
     await message.answer("Выбери сферу ⤵️", reply_markup=sphere_kb)
 
 # ---------------------------------
-# Final generate (gpt-4-turbo)
+# Final generate (GPT-4)
 # ---------------------------------
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_READY and m.text in SUB_MAP.keys())
 async def final_generate(message: types.Message):
@@ -622,8 +622,7 @@ async def final_generate(message: types.Message):
         if not u.get("paid") and not u.get("free_used"):
             update_user(uid, free_used=1)
             await message.answer(
-                "🔒 Ты использовала бесплатную консультацию. "
-                "Чтобы открыть все разделы — введи секретный код разблокировки."
+                "🔒 Ты использовала бесплатную консультацию. Чтобы открыть все разделы — введи секретный код разблокировки."
             )
 
     except OpenAIError:
@@ -632,7 +631,7 @@ async def final_generate(message: types.Message):
     except Exception:
         log.exception("Unexpected error")
         await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
-
+        
 async def on_shutdown(dp):
     await bot.delete_webhook()
     log.info("🧹 Webhook удалён (бот остановлен)")
