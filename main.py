@@ -2,6 +2,11 @@ import os
 import logging
 import sqlite3
 from datetime import datetime
+import swisseph as swe
+import pytz
+from timezonefinder import TimezoneFinder
+from geopy.geocoders import Nominatim
+from datetime import timedelta
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
