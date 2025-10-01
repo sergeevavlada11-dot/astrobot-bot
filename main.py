@@ -599,7 +599,7 @@ async def final_generate(message: types.Message):
     # -----------------------
     # 📡 GPT-запрос
     # -----------------------
-    try:
+        try:
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -607,17 +607,18 @@ async def final_generate(message: types.Message):
                 {"role": "user", "content": prompt},
             ]
         )
-      answer = completion.choices[0].message.content
 
-    MAX_LEN = 4000
-    for i in range(0, len(answer), MAX_LEN):
-        part = answer[i:i + MAX_LEN]
-        await message.answer(part)
+        answer = completion.choices[0].message.content
 
-    # 💾 Сохраняем полный ответ
-    save_reading(uid, sphere, sub, prompt, answer)
+        # 🔧 Разбиваем длинный текст на части, чтобы избежать ошибки MessageIsTooLong
+        MAX_LEN = 4000
+        for i in range(0, len(answer), MAX_LEN):
+            part = answer[i:i + MAX_LEN]
+            await message.answer(part)
 
-        # Если это был бесплатный доступ — помечаем как использованный
+        # 💾 Сохраняем полный ответ
+        save_reading(uid, sphere, sub, prompt, answer)
+
         if not u.get("paid") and not u.get("free_used"):
             update_user(uid, free_used=1)
             await message.answer(
@@ -631,7 +632,7 @@ async def final_generate(message: types.Message):
     except Exception:
         log.exception("Unexpected error")
         await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
-        
+
 # ----------------------
 # Webhook lifecycle
 # ----------------------
