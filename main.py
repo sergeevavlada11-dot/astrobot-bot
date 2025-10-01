@@ -361,6 +361,20 @@ async def ask_time(message: types.Message):
 
     await message.answer("Супер! 🕰️ Теперь пришли время рождения <b>чч:мм</b>\nЕсли не знаешь — напиши <i>не знаю</i>")
 
+# -----------------------
+# 🔧 Форматирование ответа
+# -----------------------
+def format_answer(text: str) -> str:
+    """
+    Форматирует текст ответа:
+    - убирает ### заголовки
+    - заменяет их на жирный стиль
+    """
+    import re
+    # ### Заголовки → жирный текст
+    text = re.sub(r"^### (.+)$", r"**\1**", text, flags=re.MULTILINE)
+    return text.strip()
+    
 @dp.message_handler(lambda m: get_state(m.from_user.id) == STATE_WAIT_TIME)
 async def ready_menu(message: types.Message):
     if await try_unlock(message): 
@@ -599,39 +613,40 @@ async def final_generate(message: types.Message):
     # -----------------------
     # 📡 GPT-запрос
     # -----------------------
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Ты опытный ведический астролог-консультант."},
-                {"role": "user", "content": prompt},
-            ]
+   try:
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Ты опытный ведический астролог-консультант."},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    raw_answer = completion.choices[0].message.content
+    answer = format_answer(raw_answer)
+
+    # 🔧 Разбиваем длинный текст на части
+    MAX_LEN = 4000
+    for i in range(0, len(answer), MAX_LEN):
+        part = answer[i:i + MAX_LEN]
+        await message.answer(part)
+
+    # 💾 Сохраняем полный ответ
+    save_reading(uid, sphere, sub, prompt, answer)
+
+    if not u.get("paid") and not u.get("free_used"):
+        update_user(uid, free_used=1)
+        await message.answer(
+            "🔒 Ты использовала бесплатную консультацию. "
+            "Чтобы открыть все разделы — введи секретный код разблокировки."
         )
 
-        raw_answer = completion.choices[0].message.content
-        answer = format_answer(raw_answer)
-
-        # 🔧 Разбиваем длинный текст на части, чтобы избежать ошибки MessageIsTooLong
-        MAX_LEN = 4000
-        for i in range(0, len(answer), MAX_LEN):
-            part = answer[i:i + MAX_LEN]
-            await message.answer(part)
-
-        # 💾 Сохраняем полный ответ
-        save_reading(uid, sphere, sub, prompt, answer)
-
-        if not u.get("paid") and not u.get("free_used"):
-            update_user(uid, free_used=1)
-            await message.answer(
-                "🔒 Ты использовала бесплатную консультацию. Чтобы открыть все разделы — введи секретный код разблокировки."
-            )
-    except OpenAIError:
-        log.exception("OpenAI error")
-        await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
-    except Exception:
-        log.exception("Unexpected error")
-        await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
-
+except OpenAIError:
+    log.exception("OpenAI error")
+    await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
+except Exception:
+    log.exception("Unexpected error")
+    await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
 
 # ----------------------
 # Webhook lifecycle
