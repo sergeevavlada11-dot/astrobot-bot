@@ -588,7 +588,7 @@ async def final_generate(message: types.Message):
             "Текст должен быть как консультация по предназначению: глубокий, вдохновляющий и стратегический."
         )
 
-    else:
+        else:
         # На всякий случай — дефолт
         prompt = (
             f"Сформируй развёрнутый анализ по сфере: {sphere_text} / {sub_text}.\n"
@@ -599,7 +599,7 @@ async def final_generate(message: types.Message):
     # -----------------------
     # 📡 GPT-запрос
     # -----------------------
-        try:
+    try:
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -632,14 +632,6 @@ async def final_generate(message: types.Message):
     except Exception:
         log.exception("Unexpected error")
         await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
-
-# ----------------------
-# Webhook lifecycle
-# ----------------------
-async def on_startup(dp):
-    db_init() 
-    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
-    log.info(f"✅ Webhook успешно установлен: {WEBHOOK_URL}")
 
 async def on_shutdown(dp):
     await bot.delete_webhook()
