@@ -608,7 +608,8 @@ async def final_generate(message: types.Message):
             ]
         )
 
-        answer = completion.choices[0].message.content
+        raw_answer = completion.choices[0].message.content
+        answer = format_answer(raw_answer)
 
         # 🔧 Разбиваем длинный текст на части, чтобы избежать ошибки MessageIsTooLong
         MAX_LEN = 4000
