@@ -624,8 +624,7 @@ async def final_generate(message: types.Message):
             await message.answer(
                 "🔒 Ты использовала бесплатную консультацию. Чтобы открыть все разделы — введи секретный код разблокировки."
             )
-
-except OpenAIError:
+    except OpenAIError:
         log.exception("OpenAI error")
         await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
     except Exception:
