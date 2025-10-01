@@ -613,7 +613,7 @@ async def final_generate(message: types.Message):
     # -----------------------
     # 📡 GPT-запрос
     # -----------------------
-   try:
+    try:
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -640,11 +640,11 @@ async def final_generate(message: types.Message):
             "🔒 Ты использовала бесплатную консультацию. "
             "Чтобы открыть все разделы — введи секретный код разблокировки."
         )
-
-except OpenAIError:
+    
+    except OpenAIError:
     log.exception("OpenAI error")
     await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
-except Exception:
+    except Exception:
     log.exception("Unexpected error")
     await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
 
