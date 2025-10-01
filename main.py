@@ -440,17 +440,17 @@ async def final_generate(message: types.Message):
         log.exception("Unexpected error")
         await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
 
-# ---------------------------------
+# ----------------------
 # Webhook lifecycle
-# ---------------------------------
-async def on_startup(dp_):
-    db_init()
-    await bot.set_webhook(WEBHOOK_URL)
-    log.info(f"Webhook set: {WEBHOOK_URL}")
+# ----------------------
+async def on_startup(dp):
+    db_init() 
+    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
+    log.info(f"✅ Webhook успешно установлен: {WEBHOOK_URL}")
 
-async def on_shutdown(dp_):
+async def on_shutdown(dp):
     await bot.delete_webhook()
-    log.info("Webhook removed")
+    log.info("🧹 Webhook удалён (бот остановлен)")
 
 if __name__ == "__main__":
     # Render / Railway webhook runner
