@@ -210,16 +210,36 @@ async def guard_access(message: types.Message, u) -> bool:
         return False
     return True
 
+VALID_CODES = {
+    "ASTRO-1F9A-2025",
+    "ASTRO-2X4M-2025",
+    "ASTRO-3L7P-2025",
+    "ASTRO-4V2Q-2025",
+    "ASTRO-5R8D-2025",
+    "ASTRO-6H1Z-2025",
+    "ASTRO-7T5B-2025",
+    "ASTRO-8W3C-2025",
+    "ASTRO-9N6J-2025",
+    "ASTRO-10K2U-2025"
+}
 async def try_unlock(message):
-    text = (message.text or "").strip()
-    if text.upper() == UNLOCK_CODE.upper():  # делаем проверку без учёта регистра
-        update_user(message.from_user.id, paid=1, free_used=0)  # сбрасываем флаг free_used
+    code = (message.text or "").strip()
+    uid = message.from_user.id
+
+    if code in VALID_CODES:
+        VALID_CODES.remove(code)  # ❗️ удаляем его, чтобы больше не сработал
+        update_user(uid, paid=1, free_used=0)
         await message.answer(
             "✅ Доступ открыт! Теперь ты можешь пользоваться всеми разделами без ограничений 🎉",
             reply_markup=sphere_kb
         )
-        log.info(f"🔓 Пользователь {message.from_user.id} успешно разблокирован ASTROVIP")
+        log.info(f"🔓 Пользователь {uid} разблокирован одноразовым кодом {code}")
         return True
+
+    elif code.upper() == "ASTROVIP":
+        await message.answer("⚠️ Этот код устарел или уже использован. Обратись в поддержку 💁‍♀️")
+        return True
+
     return False
 
 # ---------------------------------
