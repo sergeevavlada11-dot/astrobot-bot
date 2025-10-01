@@ -210,11 +210,15 @@ async def guard_access(message: types.Message, u) -> bool:
         return False
     return True
 
-async def try_unlock(message: types.Message) -> bool:
+async def try_unlock(message):
     text = (message.text or "").strip()
-    if text == UNLOCK_CODE:
-        update_user(message.from_user.id, paid=1)
-        await message.answer("✅ Доступ открыт! Можешь пользоваться всеми разделами без ограничений 🎉", reply_markup=sphere_kb)
+    if text.upper() == UNLOCK_CODE.upper():  # делаем проверку без учёта регистра
+        update_user(message.from_user.id, paid=1, free_used=0)  # сбрасываем флаг free_used
+        await message.answer(
+            "✅ Доступ открыт! Теперь ты можешь пользоваться всеми разделами без ограничений 🎉",
+            reply_markup=sphere_kb
+        )
+        log.info(f"🔓 Пользователь {message.from_user.id} успешно разблокирован ASTROVIP")
         return True
     return False
 
