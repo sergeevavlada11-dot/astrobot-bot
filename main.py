@@ -607,9 +607,15 @@ async def final_generate(message: types.Message):
                 {"role": "user", "content": prompt},
             ]
         )
-        answer = completion.choices[0].message.content
-        await message.answer(answer)
-        save_reading(uid, sphere, sub, prompt, answer)
+      answer = completion.choices[0].message.content
+
+    MAX_LEN = 4000
+    for i in range(0, len(answer), MAX_LEN):
+        part = answer[i:i + MAX_LEN]
+        await message.answer(part)
+
+    # 💾 Сохраняем полный ответ
+    save_reading(uid, sphere, sub, prompt, answer)
 
         # Если это был бесплатный доступ — помечаем как использованный
         if not u.get("paid") and not u.get("free_used"):
