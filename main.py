@@ -625,16 +625,26 @@ async def final_generate(message: types.Message):
                 "🔒 Ты использовала бесплатную консультацию. Чтобы открыть все разделы — введи секретный код разблокировки."
             )
 
-    except OpenAIError:
+except OpenAIError:
         log.exception("OpenAI error")
         await message.answer("⚠️ Сейчас ИИ недоступен. Давай попробуем позже.")
     except Exception:
         log.exception("Unexpected error")
         await message.answer("❌ Что-то пошло не так. Попробуем ещё раз.")
-        
+
+
+# ----------------------
+# Webhook lifecycle
+# ----------------------
+async def on_startup(dp):
+    db_init()  # ✅ Инициализация базы данных, если используешь её
+    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
+    log.info(f"✅ Webhook успешно установлен: {WEBHOOK_URL}")
+
 async def on_shutdown(dp):
     await bot.delete_webhook()
     log.info("🧹 Webhook удалён (бот остановлен)")
+
 
 if __name__ == "__main__":
     # Render / Railway webhook runner
