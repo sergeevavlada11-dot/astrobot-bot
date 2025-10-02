@@ -618,7 +618,7 @@ async def final_generate(message: types.Message):
         chart = calculate_chart_ddmmyyyy(city_for_calc, date_for_calc, time_for_calc)
         astro_block = chart_to_text(chart)
         if "Планеты:" not in astro_block or "Дом" not in astro_block:
-        log.warning("⚠️ В astro_block нет нужных данных! GPT может сгенерировать общий текст.")
+            log.warning("⚠️ В astro_block нет нужных данных! GPT может сгенерировать общий текст.")
 
 
         # ✅ Вот здесь вставляем лог, чтобы проверить, что карта реально сформировалась:
