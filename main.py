@@ -287,6 +287,133 @@ async def try_unlock(message):
 
     return False
 
+# =========================
+# 🔭 Астрология: геокодинг, TZ, расчёт карты
+# =========================
+
+SIGN_NAMES = ["Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"]
+
+# Инициализируем геокодер один раз (важно для Render)
+_geolocator = Nominatim(user_agent="astrobot_v1")
+
+def geocode_city(city: str):
+    """
+    Возвращает (lat, lon, display_name). Если не нашли — None.
+    """
+    try:
+        loc = _geolocator.geocode(city, language="ru")
+        if not loc:
+            return None
+        return (float(loc.latitude), float(loc.longitude), loc.address)
+    except Exception:
+        return None
+
+def get_timezone_offset_hours(lat: float, lon: float, dt_naive_local_str: str, fmt="%d.%m.%Y %H:%M"):
+    """
+    Возвращает (смещение_в_часах, tzname) для координат и ЛОКАЛЬНОЙ даты/времени рождения.
+    dt_naive_local_str: '20.05.1995 14:30'
+    """
+    tf = TimezoneFinder()
+    tzname = tf.timezone_at(lat=lat, lng=lon)
+    if not tzname:
+        tzname = "Europe/Moscow"
+    tz = pytz.timezone(tzname)
+
+    # парсим локальную дату/время без TZ
+    dt_local = datetime.strptime(dt_naive_local_str, fmt)
+    # локализуем (как будто это местное время)
+    dt_localized = tz.localize(dt_local, is_dst=None)
+    # смещение от UTC в секундах
+    offset_sec = dt_localized.utcoffset().total_seconds()
+    return offset_sec / 3600.0, tzname
+
+def _lon_to_sign(lon_deg: float):
+    sign_index = int(lon_deg // 30) % 12
+    return SIGN_NAMES[sign_index]
+
+def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: str):
+    """
+    По городу + дате 'dd.mm.yyyy' + времени 'HH:MM' возвращает словарь:
+    планеты (тропически), асцендент, MC, куспиды домов (Плацидус).
+    """
+    # 1) Гео
+    geo = geocode_city(city)
+    if not geo:
+        lat, lon, display = 55.7558, 37.6173, "Москва, Россия (fallback)"
+    else:
+        lat, lon, display = geo
+
+    # 2) TZ смещение для локального времени рождения
+    dt_local_str = f"{date_str_ddmmyyyy} {time_str_hhmm}"
+    offset_hours, tzname = get_timezone_offset_hours(lat, lon, dt_local_str)
+
+    # 3) Переводим локальное время рождения в UTC
+    dt_local = datetime.strptime(dt_local_str, "%d.%m.%Y %H:%M")
+    dt_utc = dt_local - timedelta(hours=offset_hours)
+
+    # 4) Юлианская дата по UTC
+    jd = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour + dt_utc.minute/60.0)
+
+    # 5) Планеты (тропически)
+    planet_map = {
+        swe.SUN: "Солнце",
+        swe.MOON: "Луна",
+        swe.MERCURY: "Меркурий",
+        swe.VENUS: "Венера",
+        swe.MARS: "Марс",
+        swe.JUPITER: "Юпитер",
+        swe.SATURN: "Сатурн",
+        swe.TRUE_NODE: "Раху",
+    }
+
+    planets = {}
+    for pl_id, name in planet_map.items():
+        lon, latp, dist, speed = swe.calc_ut(jd, pl_id)  # тропика по умолчанию
+        planets[name] = {"lon": lon, "sign": _lon_to_sign(lon)}
+
+    # Кету = Раху + 180°
+    if "Раху" in planets:
+        ketu_lon = (planets["Раху"]["lon"] + 180.0) % 360.0
+        planets["Кету"] = {"lon": ketu_lon, "sign": _lon_to_sign(ketu_lon)}
+
+    # 6) Дома (Плацидус)
+    houses, ascmc = swe.houses(jd, lat, lon)
+    asc = ascmc[0]
+    mc = ascmc[1]
+
+    asc_sign = _lon_to_sign(asc)
+    house_cusps = {f"Дом {i+1}": {"lon": houses[i], "sign": _lon_to_sign(houses[i])} for i in range(12)}
+
+    return {
+        "city_resolved": display,
+        "tzname": tzname,
+        "utc_offset_hours": offset_hours,
+        "ascendant": {"lon": asc, "sign": asc_sign},
+        "midheaven": {"lon": mc, "sign": _lon_to_sign(mc)},
+        "houses": house_cusps,
+        "planets": planets,
+    }
+
+def chart_to_text(chart: dict) -> str:
+    """
+    Текст для промпта: кратко и по делу.
+    """
+    parts = []
+    parts.append(f"Город (геокод): {chart['city_resolved']}")
+    parts.append(f"Часовой пояс: {chart['tzname']} (UTC{chart['utc_offset_hours']:+.0f})")
+    parts.append(f"Асцендент: {chart['ascendant']['sign']} ({chart['ascendant']['lon']:.2f}°)")
+    parts.append(f"MC: {chart['midheaven']['sign']} ({chart['midheaven']['lon']:.2f}°)")
+
+    parts.append("\nПланеты:")
+    for name, data in chart["planets"].items():
+        parts.append(f"- {name}: {data['sign']} ({data['lon']:.2f}°)")
+
+    parts.append("\nКуспиды домов:")
+    for hname, data in chart["houses"].items():
+        parts.append(f"- {hname}: {data['sign']} ({data['lon']:.2f}°)")
+
+    return "\n".join(parts)
+
 # ---------------------------------
 # Commands
 # ---------------------------------
@@ -470,6 +597,20 @@ async def final_generate(message: types.Message):
     sphere_text = SPHERE_MAP.get(sphere, sphere)
     sub_text = SUB_MAP.get(sub, sub)
 
+        # ====== АСТРО-КАРТА из введённых данных ======
+    city_for_calc = birth.get("city") or "Москва"
+    date_for_calc = birth.get("birth_date") or "01.01.2000"
+    time_for_calc = birth.get("birth_time") or "12:00"
+    if "неизвест" in time_for_calc.lower():
+        time_for_calc = "12:00"  # разумный дефолт при неизвестном времени
+
+    try:
+        chart = calculate_chart_ddmmyyyy(city_for_calc, date_for_calc, time_for_calc)
+        astro_block = chart_to_text(chart)
+    except Exception:
+        log.exception("Astro calc error")
+        astro_block = "Астрологические расчёты недоступны. Используй общий психологический анализ по данным пользователя."
+
     # -----------------------
     # 🔮 Выбираем PROMPT по сфере
     # -----------------------
@@ -493,6 +634,7 @@ async def final_generate(message: types.Message):
             "6. Итог — собери всё в единый вывод, который даёт целостное понимание потенциала человека.\n\n"
             "📜 Исходные данные:\n"
             f"{birth_text}\n\n"
+            f"{astro_block}\n\n"  # 🌟 вот здесь добавляем расчёт карты
             f"Сфера анализа: {sphere_text}\n"
             f"Подтема: {sub_text}\n\n"
             "Задача: Сформируй разбор, похожий по стилю и глубине на консультацию опытного ведического астролога. "
@@ -520,6 +662,7 @@ async def final_generate(message: types.Message):
             "7. Итог — собери всё в целостную картину финансовой реализации.\n\n"
             "📜 Исходные данные:\n"
             f"{birth_text}\n\n"
+            f"{astro_block}\n\n"  # 🌟 вот здесь добавляем расчёт карты
             f"Сфера анализа: {sphere_text}\n"
             f"Подтема: {sub_text}\n\n"
             "Задача: Сформируй глубокий анализ в формате профессиональной ведической консультации. "
@@ -548,6 +691,7 @@ async def final_generate(message: types.Message):
             "7. Итог — общее понимание вашей любовной динамики и потенциала партнёрства.\n\n"
             "📜 Исходные данные:\n"
             f"{birth_text}\n\n"
+            f"{astro_block}\n\n"  # 🌟 вот здесь добавляем расчёт карты
             f"Сфера анализа: {sphere_text}\n"
             f"Подтема: {sub_text}\n\n"
             "Задача: Сформируй глубокий разбор отношений объёмом не менее 3000 символов. "
@@ -575,6 +719,7 @@ async def final_generate(message: types.Message):
             "7. Итог — общий вывод о предназначении в карьере и миссии через работу.\n\n"
             "📜 Исходные данные:\n"
             f"{birth_text}\n\n"
+            f"{astro_block}\n\n"  # 🌟 вот здесь добавляем расчёт карты
             f"Сфера анализа: {sphere_text}\n"
             f"Подтема: {sub_text}\n\n"
             "Задача: Сформируй профессиональный карьерный отчёт объёмом не менее 3000 символов. "
@@ -601,6 +746,7 @@ async def final_generate(message: types.Message):
             "6. Итог — целостный вывод о предназначении и пути развития.\n\n"
             "📜 Исходные данные:\n"
             f"{birth_text}\n\n"
+            f"{astro_block}\n\n"  # 🌟 вот здесь добавляем расчёт карты
             f"Сфера анализа: {sphere_text}\n"
             f"Подтема: {sub_text}\n\n"
             "Задача: Сформируй философский и практический разбор объёмом не менее 3000 символов. "
