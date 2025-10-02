@@ -378,8 +378,14 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
 
     planets = {}
     for pl_id, name in planet_map.items():
-        lon, latp, dist, speed = swe.calc_ut(jd, pl_id)  # тропика по умолчанию
+        res = swe.calc_ut(jd, pl_id)  # тропика по умолчанию
+        if len(res) == 4:
+            lon, latp, dist, speed = res
+        else:
+            lon, latp, dist, speed = res[0], 0, 0, 0  # безопасные значения, если расчёт не дал 4 элемента
+
         planets[name] = {"lon": lon, "sign": _lon_to_sign(lon)}
+
 
     # Кету = Раху + 180°
     if "Раху" in planets:
