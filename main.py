@@ -254,16 +254,21 @@ async def guard_access(message: types.Message, u) -> bool:
     return True
 
 VALID_CODES = {
-    "ASTRO-1F9A-2025",
-    "ASTRO-2X4M-2025",
-    "ASTRO-3L7P-2025",
-    "ASTRO-4V2Q-2025",
-    "ASTRO-5R8D-2025",
-    "ASTRO-6H1Z-2025",
-    "ASTRO-7T5B-2025",
-    "ASTRO-8W3C-2025",
-    "ASTRO-9N6J-2025",
-    "ASTRO-10K2U-2025"
+    "ASTRO-11Q9P-2025",
+    "ASTRO-12M4X-2025",
+    "ASTRO-13V7R-2025",
+    "ASTRO-14Z2C-2025",
+    "ASTRO-15L8D-2025",
+    "ASTRO-16F3K-2025",
+    "ASTRO-17W5N-2025",
+    "ASTRO-18H6J-2025",
+    "ASTRO-19P2B-2025",
+    "ASTRO-20S9T-2025",
+    "ASTRO-21R3V-2025",
+    "ASTRO-22C8M-2025",
+    "ASTRO-23K1X-2025",
+    "ASTRO-24B7Q-2025",
+    "ASTRO-25D4Z-2025"
 }
 async def try_unlock(message):
     code = (message.text or "").strip()
@@ -271,21 +276,26 @@ async def try_unlock(message):
     log.info(f"🔑 Проверка одноразового кода: {code} от пользователя {uid}")
 
     if code in VALID_CODES:
-        VALID_CODES.remove(code)  # ❗️ Код сразу вычеркивается
+        # ✅ Код больше не удаляем — теперь он бессрочный
         update_user(uid, paid=1, free_used=0)
         await message.answer(
             "✅ Доступ открыт! Теперь ты можешь пользоваться всеми разделами без ограничений 🎉",
             reply_markup=sphere_kb
         )
-        log.info(f"🔓 Пользователь {uid} разблокирован одноразовым кодом {code}")
+        log.info(f"🔓 Пользователь {uid} разблокирован кодом {code}")
         return True
 
     elif code.upper() == "ASTROVIP":
-        await message.answer("⚠️ Этот код устарел или уже использован. Обратись в поддержку 💁‍♀️")
-        log.info(f"❌ Пользователь {uid} ввёл устаревший код ASTROVIP")
+        update_user(uid, paid=1, free_used=0)
+        await message.answer(
+            "✅ VIP-доступ активирован навсегда ✨",
+            reply_markup=sphere_kb
+        )
+        log.info(f"🔓 Пользователь {uid} активировал VIP-доступ")
         return True
 
     return False
+
 
 # =========================
 # 🔭 Астрология: геокодинг, TZ, расчёт карты
