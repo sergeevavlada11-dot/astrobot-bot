@@ -346,25 +346,30 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
     По городу + дате 'dd.mm.yyyy' + времени 'HH:MM' возвращает словарь:
     планеты (тропически), асцендент, MC, куспиды домов (Плацидус).
     """
-    # 1) Гео
+    # 1️⃣ Гео-координаты
     geo = geocode_city(city)
     if not geo:
         lat, lon, display = 55.7558, 37.6173, "Москва, Россия (fallback)"
     else:
         lat, lon, display = geo
 
-    # 2) TZ смещение для локального времени рождения
+    # 2️⃣ Часовой пояс и локальное время
     dt_local_str = f"{date_str_ddmmyyyy} {time_str_hhmm}"
     offset_hours, tzname = get_timezone_offset_hours(lat, lon, dt_local_str)
 
-    # 3) Переводим локальное время рождения в UTC
+    # 3️⃣ Переводим локальное время рождения в UTC
     dt_local = datetime.strptime(dt_local_str, "%d.%m.%Y %H:%M")
     dt_utc = dt_local - timedelta(hours=offset_hours)
 
-    # 4) Юлианская дата по UTC
-    jd = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour + dt_utc.minute/60.0)
+    # 4️⃣ Юлианская дата по UTC
+    jd = swe.julday(
+        dt_utc.year,
+        dt_utc.month,
+        dt_utc.day,
+        dt_utc.hour + dt_utc.minute / 60.0
+    )
 
-    # 5) Планеты (тропически)
+    # 5️⃣ Планеты (тропически)
     planet_map = {
         swe.SUN: "Солнце",
         swe.MOON: "Луна",
@@ -379,26 +384,35 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
     planets = {}
     for pl_id, name in planet_map.items():
         res = swe.calc_ut(jd, pl_id)
+
+        # если результат вложен в кортеж — достаём первый элемент
         if isinstance(res[0], (tuple, list)):
-            lon, latp, dist, speed = res[0]
-        elif len(res) == 4:
-            lon, latp, dist, speed = res
+            values = res[0]
         else:
-            lon = res[0] if len(res) > 0 else 0
-            latp = dist = speed = 0
+            values = res
 
-        planets[name] = {"lon": lon, "sign": _lon_to_sign(float(lon))}
+        # берём только первые 4 значения, заполняем недостающие нулями
+        lon, latp, dist, speed = (list(values) + [0, 0, 0, 0])[:4]
 
-    # ✅ Кету рассчитываем отдельно
+        planets[name] = {
+            "lon": lon,
+            "sign": _lon_to_sign(float(lon))
+        }
+
+    # ✅ Кету рассчитываем один раз после цикла
     if "Раху" in planets:
         ketu_lon = (planets["Раху"]["lon"] + 180.0) % 360.0
-        planets["Кету"] = {"lon": ketu_lon, "sign": _lon_to_sign(ketu_lon)}
+        planets["Кету"] = {
+            "lon": ketu_lon,
+            "sign": _lon_to_sign(ketu_lon)
+        }
 
+    # 📜 Логи по планетам
     log.info("✅ Планеты рассчитаны:")
     for pl_name, pdata in planets.items():
         log.info(f" - {pl_name}: {pdata['sign']} ({pdata['lon']:.2f}°)")
 
-    # 6) Дома (Плацидус)
+    # 6️⃣ Дома (Плацидус)
     houses, ascmc = swe.houses(jd, lat, lon)
     asc = ascmc[0]
     mc = ascmc[1]
@@ -411,7 +425,12 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
         "utc_offset_hours": offset_hours,
         "ascendant": {"lon": asc, "sign": asc_sign},
         "midheaven": {"lon": mc, "sign": _lon_to_sign(mc)},
-        "houses": {f"Дом {i+1}": {"lon": houses[i], "sign": _lon_to_sign(houses[i])} for i in range(12)},
+        "houses": {
+            f"Дом {i + 1}": {
+                "lon": houses[i],
+                "sign": _lon_to_sign(houses[i])
+            } for i in range(12)
+        },
         "planets": planets,
     }
 
