@@ -404,15 +404,15 @@ if "Раху" in planets:
         "sign": _lon_to_sign(ketu_lon)
     }
 
-    
-    log.info("✅ Планеты рассчитаны:")
-    for pl_name, pdata in planets.items():
+# ✅ Логируем рассчитанные планеты
+log.info("✅ Планеты рассчитаны:")
+for pl_name, pdata in planets.items():
     log.info(f" - {pl_name}: {pdata['sign']} ({pdata['lon']:.2f}°)")
 
-    # 6) Дома (Плацидус)
-    houses, ascmc = swe.houses(jd, lat, lon)
-    asc = ascmc[0]
-    mc = ascmc[1]
+# 6) Дома (Плацидус)
+houses, ascmc = swe.houses(jd, lat, lon)
+asc = ascmc[0]
+mc = ascmc[1]
 
     asc_sign = _lon_to_sign(asc)
     house_cusps = {f"Дом {i+1}": {"lon": houses[i], "sign": _lon_to_sign(houses[i])} for i in range(12)}
