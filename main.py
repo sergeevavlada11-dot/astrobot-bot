@@ -364,33 +364,46 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
     # 4) Юлианская дата по UTC
     jd = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour + dt_utc.minute/60.0)
 
-    # 5) Планеты (тропически)
+   # 5) Планеты (тропически)
     planet_map = {
-        swe.SUN: "Солнце",
-        swe.MOON: "Луна",
-        swe.MERCURY: "Меркурий",
-        swe.VENUS: "Венера",
-        swe.MARS: "Марс",
-        swe.JUPITER: "Юпитер",
-        swe.SATURN: "Сатурн",
-        swe.TRUE_NODE: "Раху",
-    }
-
+    swe.SUN: "Солнце",
+    swe.MOON: "Луна",
+    swe.MERCURY: "Меркурий",
+    swe.VENUS: "Венера",
+    swe.MARS: "Марс",
+    swe.JUPITER: "Юпитер",
+    swe.SATURN: "Сатурн",
+    swe.TRUE_NODE: "Раху",
+}
     planets = {}
     for pl_id, name in planet_map.items():
-        res = swe.calc_ut(jd, pl_id)  # тропика по умолчанию
-        if len(res) == 4:
-            lon, latp, dist, speed = res
-        else:
-            lon, latp, dist, speed = res[0], 0, 0, 0  # безопасные значения, если расчёт не дал 4 элемента
+    res = swe.calc_ut(jd, pl_id)
+    
+    # ✅ Корректная распаковка результата
+    if isinstance(res[0], (tuple, list)):
+        lon, latp, dist, speed = res[0]
+    elif len(res) == 4:
+        lon, latp, dist, speed = res
+    else:
+        lon = res[0] if len(res) > 0 else 0
+        latp = dist = speed = 0
 
-        planets[name] = {"lon": lon, "sign": _lon_to_sign(lon)}
-
-
-    # Кету = Раху + 180°
+    planets[name] = {
+        "lon": lon,
+        "sign": _lon_to_sign(float(lon))
+    }
+    
+    # ✅ Кету рассчитываем один раз после цикла
     if "Раху" in planets:
-        ketu_lon = (planets["Раху"]["lon"] + 180.0) % 360.0
-        planets["Кету"] = {"lon": ketu_lon, "sign": _lon_to_sign(ketu_lon)}
+    ketu_lon = (planets["Раху"]["lon"] + 180.0) % 360.0
+    planets["Кету"] = {
+        "lon": ketu_lon,
+        "sign": _lon_to_sign(ketu_lon)
+    }
+    
+    log.info("✅ Планеты рассчитаны:")
+    for pl_name, pdata in planets.items():
+    log.info(f" - {pl_name}: {pdata['sign']} ({pdata['lon']:.2f}°)")
 
     # 6) Дома (Плацидус)
     houses, ascmc = swe.houses(jd, lat, lon)
