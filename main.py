@@ -413,9 +413,8 @@ for pl_name, pdata in planets.items():
 houses, ascmc = swe.houses(jd, lat, lon)
 asc = ascmc[0]
 mc = ascmc[1]
-
-    asc_sign = _lon_to_sign(asc)
-    house_cusps = {f"Дом {i+1}": {"lon": houses[i], "sign": _lon_to_sign(houses[i])} for i in range(12)}
+asc_sign = _lon_to_sign(asc)
+house_cusps = {f"Дом {i+1}": {"lon": houses[i], "sign": _lon_to_sign(houses[i])} for i in range(12)}
 
     return {
         "city_resolved": display,
