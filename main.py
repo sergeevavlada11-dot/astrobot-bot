@@ -364,8 +364,8 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
     # 4) Юлианская дата по UTC
     jd = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour + dt_utc.minute/60.0)
 
-   # 5) Планеты (тропически)
-    planet_map = {
+    # 5) Планеты (тропически)
+planet_map = {
     swe.SUN: "Солнце",
     swe.MOON: "Луна",
     swe.MERCURY: "Меркурий",
@@ -375,8 +375,11 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
     swe.SATURN: "Сатурн",
     swe.TRUE_NODE: "Раху",
 }
-    planets = {}
-    for pl_id, name in planet_map.items():
+
+planets = {}
+
+# ✅ Цикл и его тело должны быть на одном уровне отступа
+for pl_id, name in planet_map.items():
     res = swe.calc_ut(jd, pl_id)
     
     # ✅ Корректная распаковка результата
@@ -392,14 +395,15 @@ def calculate_chart_ddmmyyyy(city: str, date_str_ddmmyyyy: str, time_str_hhmm: s
         "lon": lon,
         "sign": _lon_to_sign(float(lon))
     }
-    
-    # ✅ Кету рассчитываем один раз после цикла
-    if "Раху" in planets:
+
+# ✅ Кету рассчитываем один раз после цикла
+if "Раху" in planets:
     ketu_lon = (planets["Раху"]["lon"] + 180.0) % 360.0
     planets["Кету"] = {
         "lon": ketu_lon,
         "sign": _lon_to_sign(ketu_lon)
     }
+
     
     log.info("✅ Планеты рассчитаны:")
     for pl_name, pdata in planets.items():
